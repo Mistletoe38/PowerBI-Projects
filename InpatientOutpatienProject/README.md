@@ -1,0 +1,71 @@
+# Анализ листа ожидания амбулаторных и стационарных больных / Waiting list analysis
+
+## Цели
+1. Мониторинг текущего состояния листа ожидания пациентов
+2. Анализ динамики очереди по стационарному (Inpatient) и амбулаторному лечению (Outpatient) по месяцам
+3. Анализ по направлениям лечения и по возрастным категориям
+
+## Ключевые метрики
+- Среднее и медианное количество пациентов в листе ожидания
+- Общее текущее количество пациентов в листе ожидания
+
+## Источники данных
+| Данные          | Формат | Охват    |
+|-----------------|--------|----------------|
+| Inpatient       | CSV    | 2018 - 2021 гг. |
+| Outpatient      | CSV    | 2018 - 2021 гг. |
+
+## Используемые технологии
+- Power Query для ETL
+- DAX-формулы для мер
+
+## Структура дашборда
+
+**Используемые вспомогательные меры:**
+
+Мера для анализа медианных значений: `Median Wait List = MEDIAN(All_Data[Total])`
+
+Мера для анализа средних значений: `Average Wait List = AVERAGE(All_Data[Total])`
+
+Ключевая мера **Avg/Med Wait List** для переключения между средними и медианными значениями с помощью слайсера и вспомогательной таблицы Calculation Method:
+```Avg/Med Wait List = SWITCH(VALUES('Calculation Method'[Calc Method]), "Average", [Average Wait List], "Median", [Median Wait List])```
+
+Мера для динамического отображения заголовка выбранного метода анализа:  
+```Dynamic Title = SWITCH(VALUES('Calculation Method'[Calc Method]), "Average", "Key Indicators - Patient Wait List (Average)", "Median", "Key Indicators - Patient Wait List (Median)")```
+___
+### Главная страница. Сводка ключевых метрик
+
+1) **Блок Total Wait List Comparison**  
+
+**Latest Month Wait List** - Общее число пациентов за последний месяц   
+```Latest Month Wait List = CALCULATE(SUM(All_Data[Total]), All_Data[Archive_Date] = MAX(All_Data[Archive_Date])) + 0```  
+
+**PY Latest Month Wait List** - Число пациентов за аналогичный последнему месяц предыдущего года  
+```PY Latest Month Wait List = CALCULATE(SUM(All_Data[Total]), All_Data[Archive_Date] = EDATE(MAX(All_Data[Archive_Date]), -12)) + 0```
+
+2) **Кольцевая диаграмма Case Type Split** 
+Распределение количества пациентов в зависимости от типа лечения (Case_Type). В качестве значений используется Avg/Med Wait List
+
+
+3) **Столбчатая диаграмма с накоплением Time Band vs. Age Profile.** Распределение количества пациентов из Avg/Med Wait List по возрасту и времени пребывания в больнице
+
+
+4) **Top 5 Specialty**. Топ 5 специализаций по количеству пациентов из Avg/Med Wait List  
+
+
+5) **Monthly Trend Analysis - Day Case / Inpatient vs Outpatiens**. Графики для анализа динамики общего числа пациентов по типу лечения по месяцам
+
+Контролы для задания фильтров по специализации, по типу лечения и дате.
+
+Всплывающая подсказка по количеству пациентов по общим специализациям из графика по месячной тенденции (DrillDown).
+
+Контролы для перехода между страницами
+___
+### Страница с детализацией для глубокой аналитики 
+Блок с контролами определения фильтров и таблица для подробного анализа
+
+___
+## Установка и запуск  
+Открыть файл `WaitingListAnalysis.pbix` в Power BI Desktop
+
+Настроить подключения к данным из папок `Inpatient`, `Outpatient` и к файлу `Mapping_Specialty.csv`
